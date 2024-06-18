@@ -56,7 +56,7 @@ class PartNormalDataset(Dataset):
         shapenet 有16 个大类，然后每个大类有一些部件 ，例如飞机 'Airplane': [0, 1, 2, 3] 其中标签为0 1  2 3 的四个小类都属于飞机这个大类
         self.seg_classes 就是将大类和小类对应起来
         """
-        self.seg_classes = {'book': [0, 1, 2]}
+        self.seg_classes = {'hub': [0, 1, 2]}
 
         # for cat in sorted(self.seg_classes.keys()):
         #     print(cat, self.seg_classes[cat])
@@ -84,7 +84,8 @@ class PartNormalDataset(Dataset):
         point_set[:, 0:3] = pc_normalize(point_set[:, 0:3])  # 做一个归一化
         choice = np.random.choice(len(seg), self.npoints, replace=True)  # 对一个类别中的数据进行随机采样 返回索引，允许重复采样
         # resample
-        point_set = point_set[choice, :]  # 根据索引采样
+        point_set = point_set[choice, :]
+        point_set[:,3:6] = [float(0),float(0),float(0)]
         seg = seg[choice]
         return point_set, choice, fn[1], cls, seg  # pointset是点云数据，cls十六个大类别，seg是一个数据中，不同点对应的小类别
 
@@ -191,7 +192,7 @@ class S3DISDataset(Dataset):
 
 
 class Generate_txt_and_3d_img:
-    def __init__(self, img_root, target_root, num_classes, testDataLoader, model_dict, color_map=None, path='123.txt'):
+    def __init__(self, img_root, target_root, num_classes, testDataLoader, model_dict, color_map=None, path=''):
         self.img_root = img_root  # 点云数据路径
         self.target_root = target_root  # 生成txt标签和预测结果路径
         self.testDataLoader = testDataLoader
@@ -329,10 +330,13 @@ if __name__ == '__main__':
     import copy
 
     img_root = r'./data/book_seam_dataset'
+
     target_root = r'./result2/'
 
-    path = 'data/book_seam_dataset/12345678/0528_03_pc_1 - Cloud_se.txt'
+    path = 'data/book_seam_dataset/weilai/0604_08_pc - Cloud.txt'
+
     num_classes = 3
+
     choice_dataset = 'ShapeNet'
 
     "所有的模型以PointNet++为标准  输入两个参数 输出两个参数，如果模型仅输出一个，可以将其修改为多输出一个None！！！！"
@@ -354,22 +358,6 @@ if __name__ == '__main__':
                                                      drop_last=True)
 
         color_map = {idx: i for idx, i in enumerate(np.linspace(0, 0.9, num_classes))}
-    else:
-        TEST_DATASET = S3DISDataset(split='test', data_root=img_root, num_point=4096, test_area=5,
-                                    block_size=1.0, sample_rate=1.0, transform=None)
-        testDataLoader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=1, shuffle=False, num_workers=0,
-                                                     pin_memory=True, drop_last=True)
-        color_maps = [(152, 223, 138), (174, 199, 232), (255, 127, 14), (91, 163, 138), (255, 187, 120), (188, 189, 34),
-                      (140, 86, 75)
-            , (255, 152, 150), (214, 39, 40), (197, 176, 213), (196, 156, 148), (23, 190, 207), (112, 128, 144)]
 
-        color_map = []
-        for i in color_maps:
-            tem = ()
-            for j in i:
-                j = j / 255
-                tem += (j,)
-            color_map.append(tem)
-        print('实例化S3DIS')
-    model_dict = {'PonintNet': [model1, r'./log/part_seg/pointnet_part_3/']}
+    model_dict = {'PonintNet': [model1, r'./log/part_seg/wl_second/']}
     c = Generate_txt_and_3d_img(img_root, target_root, num_classes, testDataLoader, model_dict, color_map, path=path)

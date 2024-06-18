@@ -90,6 +90,7 @@ class PartNormalDataset(Dataset):
             choice = np.random.choice(len(seg), self.npoints, replace=True)  # 对一个类别中的数据进行随机采样 返回索引，允许重复采样
             # resample
             point_set = point_set[choice, :]  # 根据索引采样
+            point_set[:, 3:6] = [float(0), float(0), float(0)]
             seg = seg[choice]
             return point_set, choice, fn[1],cls, seg # pointset是点云数据，cls十六个大类别，seg是一个数据中，不同点对应的小类别
 
@@ -132,33 +133,29 @@ class Generate_txt_and_3d_img:
             self.all_pred_image_path.append(os.path.join(self.target_root, n + '_predict_image'))
         "将模型对应的预测txt结果和img结果生成出来，对应几个模型就在列表中添加几个元素"
 
-
         self.generate_predict_to_txt()
         today = arrow.now().format("YYYY-MM-DD-HH-mm")
         today = str(today)
-        pri_second_path = os.path.join('result1/pridit_second_mode/',  today +'_predict.txt')
+        pri_second_path = os.path.join('result1/pridit_second_mode/', today + '_predict.pcd')
         if models == 1:
-           self.load_label_3(pri_second_path,today)
+            self.load_label_3(pri_second_path, today)
         elif models == 2:
-           save_tow_cir = 'save_results_ply/' +today + '_two' + '.pcd'
-           save_in_cir = 'save_cir_center/' +today+ '_in' +'.pcd'
-           self.load_label_2(save_tow_cir,save_in_cir,today)
+            save_tow_cir = 'save_results_ply/' + today + '_two' + '.pcd'
+            save_in_cir = 'save_cir_center/' + today + '_in' + '.pcd'
+            self.load_label_2(save_tow_cir, save_in_cir, today)
+            # self.o3d_draw_3d_img(save_path)
+            cenrt = get_cloud_center(save_in_cir)
+            self.get_center1(save_tow_cir, cenrt, today, pri_second_path)
 
-           # self.o3d_draw_3d_img(save_path)
-           cenrt = get_cloud_center(save_in_cir)
-           self.get_center1(save_tow_cir,cenrt)
 
-
-    def get_center1(self,save_path,center):
-
+    def get_center1(self,save_path,center,today,pri_second_path):
+        pcd_ori = o3d.io.read_point_cloud(pri_second_path)
+        pcd_ori.paint_uniform_color([1,1,1])
         pcd = o3d.io.read_point_cloud(save_path)
         pcd.paint_uniform_color([0, 1, 0])
-
         # 输出最小圆的中心和半径
-
         points = np.asarray(pcd.points)
         print("points_len", len(points))
-
         # center2 = pcd.get_center()
         # print("orr:",center2)
         # 用户指定的点云数据
@@ -172,7 +169,6 @@ class Generate_txt_and_3d_img:
         center3 = pcd1.get_center()
         print(center3)
         # 距离计算
-
         dists = pcd.compute_point_cloud_distance(pcd1)
         dists = np.asarray(dists)
         print("len_dus", len(dists))
@@ -180,15 +176,12 @@ class Generate_txt_and_3d_img:
         np.savetxt('array.txt', unique_array, fmt='%d')
         # plt.plot(unique_array)
         # plt.show()
-
-        ind = np.where((dists >= 260) & (dists <= 270))[0]
-
+        ind = np.where((dists >= 255) & (dists <= 265))[0]
         a = []
         for u in ind:
             a.append(dists[u])
-        # a.sort()
         a = np.asarray(a)
-        np.savetxt('1111.txt', a, fmt='%f.08')
+        # np.savetxt('1111.txt', a, fmt='%f.08')
         plt.plot(a)
         plt.show()
         print("len:", len(ind))
@@ -196,19 +189,32 @@ class Generate_txt_and_3d_img:
         pcd3.paint_uniform_color([255, 0, 0])
         center4 = pcd3.get_center()
         print(center4)
+        roi = './ROI/'
+        o3d.io.write_point_cloud(roi+str(today)+'.pcd', pcd3, write_ascii=True)  # ascii编码
+        plane_seg_3d = self.segment_plane_3D(pcd3)
+        o3d.visualization.draw_geometries([plane_seg_3d,pcd_ori], window_name="bouding box")
 
-        o3d.visualization.draw_geometries([pcd3, pcd], window_name="bouding box")
-        # o3d.io.write_point_cloud(save_path, [pcd3, pcd], write_ascii=True)  # ascii编码
 
+    def segment_plane_3D(delf,pcd):
 
+        # file_path = r"C:\Users\hr\Desktop\fenge_test\t3\extracted_other_points.ply"
+        # 读取PLY文件
+        # point_cloud = o3d.io.read_point_cloud(file_path)
+        point_cloud = pcd
+        # 创建分割对象并设置参数
+        plane_model, inliers = point_cloud.segment_plane(distance_threshold=3,
+                                                         ransac_n=3,
+                                                         num_iterations=1000)
 
+        # 提取分割结果
+        extracted_plane_inliers = point_cloud.select_by_index(inliers)
+        # extracted_other_points = point_cloud.select_by_index(inliers, invert=True)
+        return extracted_plane_inliers
     def generate_predict_to_txt(self):
 
             for batch_id, (points,choice,fn,label, target) in tqdm.tqdm(enumerate(self.testDataLoader),
                                                                           total=len(self.testDataLoader),smoothing=0.9):
-
                 #点云数据、整个图像的标签、每个点的标签、  没有归一化的点云数据（带标签）torch.Size([1, 7, 2048])
-
                 points = points.transpose(2, 1)
                 patt = str(fn[0])
                 data = np.loadtxt(patt, dtype=np.float32)
@@ -222,7 +228,6 @@ class Generate_txt_and_3d_img:
                 point_set_without_normal = np.asarray(torch.cat([points.permute(0, 2, 1),target[:,:,None]],dim=-1)).squeeze(0)  # 代标签 没有归一化的点云数据  的numpy形式
                 np.savetxt(os.path.join(self.label_path_txt,f'{batch_id}_label.txt'), point_set_without_normal, fmt='%.04f') # 将其存储为txt文件
                 " points  torch.Size([16, 2048, 6])  label torch.Size([16, 1])  target torch.Size([16, 2048])"
-
                 assert len(self.model) == len(self.all_pred_txt_path) , '路径与模型数量不匹配，请检查'
 
                 for n,model,pred_path in zip(self.model_name,self.model,self.all_pred_txt_path):
@@ -244,7 +249,6 @@ class Generate_txt_and_3d_img:
                     np.savetxt(save_path,seg_pred, fmt='%.04f')
 
     def o3d_draw_3d_img(self,save_path):
-
 
         pcd = o3d.io.read_point_cloud(save_path)
 
@@ -281,8 +285,13 @@ class Generate_txt_and_3d_img:
             if points[i][6] == float(3.0):
                 points[i][6] = 'nan'
                 a.append(points[i])
-        np.savetxt(pri_second_path, a, fmt='%.8f', delimiter='  ')
-        save_path = os.path.join('data/book_seam_dataset/12345678/', f'PonintNet_0.txt')
+        a = np.asarray(a)
+        pcd = o3d.geometry.PointCloud()
+        pcd.points = o3d.utility.Vector3dVector(a[:, :3])
+        pcd.normals = o3d.utility.Vector3dVector(a[:, 3:6])
+        o3d.io.write_point_cloud(pri_second_path, pcd, write_ascii=True)
+        # np.savetxt(pri_second_path, a, fmt='%.8f', delimiter='  ',write_ascii=True)
+        save_path = os.path.join('data/book_seam_dataset/defect_data/', f'PonintNet_0.txt')
         np.savetxt(save_path, a, fmt='%.8f', delimiter='  ')
         os.rename(result_path, self.all_pred_txt_path[0] + '/' + today + '.txt')
 
@@ -297,7 +306,7 @@ class Generate_txt_and_3d_img:
         for i in range(0, points.shape[0]):
             if points[i][6] == float(0.0):
                 two_cir.append(points[i])
-            elif points[i][6] == float(2.0):
+            elif points[i][6] == float(1.0):
                 two_cir.append(points[i])
                 in_cir.append(points[i])
         in_cir = np.array(in_cir)

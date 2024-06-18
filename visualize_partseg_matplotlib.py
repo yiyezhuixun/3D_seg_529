@@ -19,7 +19,7 @@ def pc_normalize(pc):
     return pc
 
 class PartNormalDataset(Dataset):
-    def __init__(self,root = './data2/shapenetcore_partanno_segmentation_benchmark_v0_normal', npoints=2500, split='train', class_choice=None, normal_channel=False):
+    def __init__(self,root = '', npoints=2500, split='train', class_choice=None, normal_channel=False):
         self.npoints = npoints # 采样点数
         self.root = root # 文件根路径
         self.catfile = os.path.join(self.root, 'synsetoffset2category.txt') # 类别和文件夹名字对应的路径
@@ -64,7 +64,7 @@ class PartNormalDataset(Dataset):
 
             # print(os.path.basename(fns))
             for fn in fns:
-                "第i次循环  fns中拿到的是第i个文件夹中符合训练的txt文件夹的名字"
+
                 token = (os.path.splitext(os.path.basename(fn))[0])
                 self.meta[item].append(os.path.join(dir_point, token + '.txt'))  # 生成一个字典，将类别名字和训练的路径组合起来  作为一个大类中符合训练的数据
                 #上面的代码执行完之后，就实现了将所有需要训练或验证的数据放入了一个字典中，字典的键是该数据所属的类别，例如飞机。值是他对应数据的全部路径
@@ -80,15 +80,8 @@ class PartNormalDataset(Dataset):
             self.classes[i] = self.classes_original[i]
         ## self.classes  将类别的名称和索引对应起来  例如 飞机 <----> 0
         # Mapping from category ('Chair') to a list of int [10,11,12,13] as segmentation labels
-        """
-        shapenet 有16 个大类，然后每个大类有一些部件 ，例如飞机 'Airplane': [0, 1, 2, 3] 其中标签为0 1  2 3 的四个小类都属于飞机这个大类
-        self.seg_classes 就是将大类和小类对应起来
-        """
-        self.seg_classes = {'Earphone': [16, 17, 18], 'Motorbike': [30, 31, 32, 33, 34, 35], 'Rocket': [41, 42, 43],
-                            'Car': [8, 9, 10, 11], 'Laptop': [28, 29], 'Cap': [6, 7], 'Skateboard': [44, 45, 46],
-                            'Mug': [36, 37], 'Guitar': [19, 20, 21], 'Bag': [4, 5], 'Lamp': [24, 25, 26, 27],
-                            'Table': [47, 48, 49], 'Airplane': [0, 1, 2, 3], 'Pistol': [38, 39, 40],
-                            'Chair': [12, 13, 14, 15], 'Knife': [22, 23]}
+
+        self.seg_classes = {'car': [0, 1]}
 
         # for cat in sorted(self.seg_classes.keys()):
         #     print(cat, self.seg_classes[cat])

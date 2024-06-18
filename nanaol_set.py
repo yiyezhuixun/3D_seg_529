@@ -17,8 +17,8 @@ def loda_txt(input_path, out_path):
 if __name__ == '__main__':
 
 
-    input_path =  "./data/book_seam_dataset/05110/"
-    out_path = "./data/book_seam_dataset/05110_1/"
+    input_path = "data/book_seam_dataset/05110/"
+    out_path = "data/book_seam_dataset/05110_1/"
     for filename in os.listdir(input_path):
         if filename.endswith(".txt"):
             loda_txt(input_path + filename, out_path + filename)

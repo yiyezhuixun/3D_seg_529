@@ -6,8 +6,6 @@ def circle_fit(points):
     # 转换为二维数组
     points = np.asarray(points)
     x, y, z = points[:, 0], points[:, 1], points[:, 2]
-
-    # 设置拟合模型，参考 https://en.wikipedia.org/wiki/Circle#Parametric_equation
     def f(c):
         # c = (x_c, y_c, r)
         x_c, y_c, r = c
@@ -24,8 +22,6 @@ def circle_fit(points):
     # 返回拟合结果
     return result.x
 
-
-# 示例点云数据
 import open3d as o3d
 import numpy as np
 from PIL import Image

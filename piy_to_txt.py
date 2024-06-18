@@ -11,7 +11,7 @@ def open3d_vector_compute():
     '''
      将点云的ply文件格式转为txt
     '''
-    pcd_path = r'C:\Users\ascen\Desktop\Pointnet_book_seam-main\test\0416_02_pc.ply'
+    pcd_path = r'C:\Users\ascen\Desktop\Pointnet_book_seam-main\test\0530_12_pc(1).ply'
     pcd = o3d.io.read_point_cloud(pcd_path)
     ####计算点云法向量
     # pcd_radius = o3d.geometry.PointCloud()
@@ -36,16 +36,19 @@ def read_ply_cloud(pcd_path,save_path):
     print(points.shape)
     cloud = np.empty([points.shape[0], 6])
     for i in range(points.shape[0]):
+        # normals[i]
         p = np.append(points[i], normals[i])
+        # na = np.array([0, 0, 0])  ###法向量为0
+        # q = np.append(points[i], p)
         cloud[i] = p
     np.savetxt(save_path, cloud, fmt='%.8f')
 
 if __name__ == '__main__':
     ss_time = time.time()
-    txt_file_path = r'test/0520_01_pc - Cloud.remaining.ply'
-    save_path = 'test/ply_to_txt.txt'
-    if os.path.exists(txt_file_path):
-        read_ply_cloud(txt_file_path,save_path)
+    ply_path = 'data/book_seam_dataset/weilai/0604_08_pc.ply'
+    save_path = 'data/book_seam_dataset/weilai/0604_08_pc.txt'
+    if os.path.exists(ply_path):
+        read_ply_cloud(ply_path,save_path)
         print("okkk")
     print("txt:",time.time() - ss_time)
 

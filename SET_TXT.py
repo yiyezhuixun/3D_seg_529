@@ -43,7 +43,7 @@ def load_label_2(input_path,out_path):
     points = np.loadtxt(input_path)
     a = []
     for i in range(0, points.shape[0]):
-        if points[i][6] == float(2.0):
+        if points[i][6] == float(1.0):
             a.append(points[i])
         elif points[i][6] == float(0.0):
             a.append(points[i])

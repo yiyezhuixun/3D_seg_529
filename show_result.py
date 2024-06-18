@@ -19,7 +19,7 @@ import  time
 
 
 
-pcd = o3d.io.read_point_cloud(r"C:\Users\ascen\Desktop\Pointnet_book_seam-main\save_results_ply\2024-05-26-17-22.pcd")
+pcd = o3d.io.read_point_cloud(r"result1/pridit_second_mode/2024-06-06-18-22_predict.pcd")
 pcd.paint_uniform_color([255, 0, 0])
 # 可视化点云
 o3d.visualization.draw_geometries([pcd])
